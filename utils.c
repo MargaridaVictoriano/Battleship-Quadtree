@@ -20,4 +20,4 @@ void flushInput() {
 
 int getRandomNumber(int a, int b) {
     return (rand() % (b - a + 1)) + a;
-  }
+}

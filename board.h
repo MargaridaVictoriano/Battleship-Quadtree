@@ -10,7 +10,7 @@
 #include "qtree.h"
 
 typedef struct {
-	QD_NODE *qtree;
+	QD_Node *qtree;
 	char remainingBoats;
 	unsigned char size_boats;
 	Boat **boats;
@@ -18,11 +18,7 @@ typedef struct {
 
 #else
 
-typedef struct {
-	char shot;
-	char state;
-	Boat *ship;
-} Cell;
+#include "cell.h"
 
 typedef struct {
 	Cell *map;
@@ -43,5 +39,6 @@ char selectCharDefense(char);
 char selectCharAttack(char);
 void printDefenseBoard(Board*);
 void printAttackBoard(Board*);
+Cell* getCell(Board*,int,int);
 
 #endif

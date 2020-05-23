@@ -18,20 +18,33 @@
 Board *buildBoard() {
 	Board *new = (Board *)malloc(sizeof(Board)); //players map
 	if(new == NULL) exit(-1);
-
-	new -> remainingBoats = 0;
-
+	
+	#ifdef QUAD
+	new -> qtree = NULL;
+	
+	for(int i = 0; i < n_matrix; i++) {
+		for(int j = 0; j < n_matrix; j++) {
+			QD_Node* new_node = buildNode(QDLEAF);
+			new_node->node.leaf.p = makePoint(j,i);
+			new_node->node.leaf.cell = makeCell(0,0,NULL);
+			
+			insertNode(new -> qtree,new_node);
+		}
+	}
+	
+	#else
 	new -> map = (Cell *)malloc(n_matrix*n_matrix*sizeof(Cell));
 	if(new -> map == NULL) exit(-1);
 
-	for(int i = 0; i <n_matrix; i++) {
-		for(int j = 0; j <n_matrix; j++) {
-			new -> map[i*n_matrix + j].shot = 0;
-			new -> map[i*n_matrix + j].state = 0;
-			new -> map[i*n_matrix + j].ship = NULL;
+	for(int i = 0; i < n_matrix; i++) {
+		for(int j = 0; j < n_matrix; j++) {
+			new -> map[i*n_matrix + j] = makeCell(0,0,NULL);
 		}
 	}
+	
+	#endif
 
+	new -> remainingBoats = 0;
 	new -> size_boats = 0;
 	new -> boats = (Boat **)malloc(sum_boats*sizeof(Boat *));
 	if(new -> boats == NULL) exit(-1);
@@ -46,8 +59,14 @@ Board *buildBoard() {
 */
 
 void destroyBoard(Board* map) {
+	#ifdef QUAD
+	//definir como remover a arvore td
+	
+	#else
 	free(map -> map);
-
+	
+	#endif
+	
 	for(int i=0; i< map -> size_boats; i++){
 		destroyBoat(map -> boats[i]);
 	}
@@ -63,7 +82,9 @@ void destroyBoard(Board* map) {
 */
 
 bool containsBoat(Board* board, int x, int y) {
-	if(board -> map[x*n_matrix + y].ship != NULL) return true;
+	Cell* dest = getCell(board, x, y);
+	
+	if(dest -> ship != NULL) return true;
 	return false;
 }
 
@@ -85,8 +106,7 @@ void insertBoat(Board* board, char boatId, Coords* coords) {
 		for(int i = 0 ; i < BITMAP_SIZE ; i++) {
 			for(int j = 0; j < BITMAP_SIZE; j++) {
 				if(temp -> ship[i*BITMAP_SIZE + j] == 1) {
-					board -> map[(i+x) * n_matrix + (j+y)].state = 1;
-					board -> map[(i+x) * n_matrix + (j+y)].ship = temp;
+					setCell(getCell(board,i+x,j+y), 0, 1, temp);
 				}
 			}
 		}
@@ -95,16 +115,13 @@ void insertBoat(Board* board, char boatId, Coords* coords) {
 		int boatSize = temp -> hp;
 		if(coords->rotation % 180 == 0) { //Horizontal
 			for(int k = y; k < boatSize + y; k++) {
-				board -> map[x * n_matrix + k].state = 1;
-				board -> map[x * n_matrix + k].ship = temp;
+				setCell(getCell(board,x,k), 0, 1, temp);
 			}
 		}
 		else { //Vertical
 			for(int k = x; k < boatSize + x; k++) {
-				board -> map[k * n_matrix + y].state = 1;
-				board -> map[k * n_matrix + y].ship = temp;
+				setCell(getCell(board,k,y), 0, 1, temp);
 			}
-
 		}
 	}
 }
@@ -226,7 +243,7 @@ char selectCharAttack(char v){
 * Definition    : This function displays the defense map.
 */
 
-void printDefenseBoard(Board* map){
+void printDefenseBoard(Board* board){
 	printf("   ");
 	for(int i=0; i<n_matrix; i++){
 		printf(" %2d",i);
@@ -236,8 +253,8 @@ void printDefenseBoard(Board* map){
 	for(int i=0; i<n_matrix; i++){
 		printf(" %2d",i);
 		for(int j=0; j<n_matrix; j++){
-			int temp = map -> map[i*n_matrix + j].state;
-			printf("  %c",selectCharDefense(temp));
+			Cell* c = getCell(board, i, j);
+			printf("  %c",selectCharDefense(c -> state));
 		}
 		printf("\n");
 	}
@@ -249,7 +266,7 @@ void printDefenseBoard(Board* map){
 * Definition    : This function displays the attack map.
 */
 
-void printAttackBoard(Board* map) {
+void printAttackBoard(Board* board) {
 	printf("   ");
 	for(int i=0; i<n_matrix; i++){
 		printf(" %2d",i);
@@ -259,9 +276,20 @@ void printAttackBoard(Board* map) {
 	for(int i=0; i<n_matrix; i++){
 		printf(" %2d",i);
 		for(int j=0; j<n_matrix; j++){
-			int temp = map -> map[i*n_matrix + j].shot;
-			printf("  %c",selectCharAttack(temp));
+			Cell* c = getCell(board, i, j);
+			printf("  %c",selectCharAttack(c -> shot));
 		}
 		printf("\n");
 	}
+}
+
+Cell* getCell(Board* board, int x, int y){
+	#ifdef QUAD
+	QD_Node* node = searchNode(board -> qtree, makePoint(x,y));
+	return &(node -> node.leaf.cell);
+
+	#else
+	return &(board -> map[x*n_matrix + y]);
+
+	#endif
 }

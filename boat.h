@@ -3,6 +3,8 @@
 
 #define BITMAP_SIZE 5
 
+#include "coords.h"
+
 typedef struct {
 	char id;
 	Coords* coords;

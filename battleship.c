@@ -243,26 +243,30 @@ bool attack(Board* att, Board* def) {
   scanf("%d", &x);
   scanf("%d", &y);
   flushInput();
-
-  if(x >= 0 && y >= 0 && x < n_matrix && y < n_matrix && att -> map[x*n_matrix + y].shot == 0) {
-    int i = x * n_matrix + y;
-    if (def -> map[i].state == 1) {
-      att -> map[i].shot = 2;
-      def -> map[i].state = 2;
-      def -> map[i].ship -> hp--;
-      setShip(def -> map[i].ship, 2, x, y);
-      if(def -> map[i].ship -> hp == 0) {
-        printf("The ship %s was just destroyed !\n\n", boatName(def -> map[i].ship -> id));
-        def -> remainingBoats--;
-      }
-      else printf("HIT!\n");
-    }
-    else {
-      att -> map[i].shot = 1;
-      def -> map[i].state = 3;
-      printf("MISS!\n");
-    }
-
+  
+  if(x >= 0 && y >= 0 && x < n_matrix && y < n_matrix) {
+    Cell* att_cell = getCell(att,x,y);
+    if(getShot(att_cell) == 0){
+    	Cell* def_cell = getCell(def,x,y);
+    	if (getState(def_cell) == 1) {
+    	  setShot(att_cell,2);
+    	  setState(def_cell,2);
+    	  
+    	  Boat* ship = getBoat(def_cell);
+    	  ship -> hp--;
+    	  setShip(ship, 2, x, y);
+    	  if(ship -> hp == 0) {
+	        printf("The ship %s was just destroyed !\n\n", boatName(ship -> id));
+	        def -> remainingBoats--;
+	      }
+	      else printf("HIT!\n");
+	    }
+	    else {
+	      setShot(att_cell,1);
+	      setState(def_cell,3);
+	      printf("MISS!\n");
+    	}
+	}
     return true;
   }
   else printf("Invalid input. Please try again.\n");

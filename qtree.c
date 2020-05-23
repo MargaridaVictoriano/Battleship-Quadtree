@@ -1,17 +1,20 @@
 #include <stdlib.h>
 #include <stdbool.h>
+
 #include "global_var.h"
+#include "coords.h"
+#include "boat.h"
+#include "qtree.h"
 
 QD_Node* buildNode(QD_TNODE type){
-	QD_Node new = (QD_Node *)malloc(sizeof(QD_Node));
-	new.type = type;
-
+	QD_Node* new = (QD_Node *)malloc(sizeof(QD_Node));
+	if(new == NULL) exit(-1);
+	new->type = type;
+	return new;
 }
 
 void destroyNode(QD_Node* node){
-	if(node.type == QDLEAF){
-		free(node);
-	}
+	free(node);
 }
 
 indexQuad quadrants(Point p,Point corners, int side) {
@@ -27,16 +30,89 @@ indexQuad quadrants(Point p,Point corners, int side) {
 			return NE;
 		}
 		return SW;
+	}
+}
+
+void insertNode(QD_Node* root, QD_Node* node){
+	insertNodeRecursive(root, node, makePoint(0,n_matrix), n_matrix);
+	return;
+}
+
+void insertNodeRecursive(QD_Node* root, QD_Node* node, Point sw, int side){
+	
+	if(root == NULL){
+		root = node;
+		return;
+	}
+
+	if(root->type == QDLEAF){
+		QD_Node* aux = buildNode(QDNODE);
+		indexQuad index = quadrants(root->node.leaf.p,sw,side);
+		aux->node.quadrants[index] = root;
+		index = quadrants(node->node.leaf.p,sw,side);
+		aux->node.quadrants[index] = node;
+		return;
+	}
+
+	//Caso recursivo
+	indexQuad index = quadrants(node -> node.leaf.p,sw,side);
+	int middleSide = side/2;
+	switch(index){
+		case SW:
+			insertNodeRecursive(node->node.quadrants[SW],node,sw, middleSide);
+			return;
+		case NW:
+			insertNodeRecursive(node->node.quadrants[NW],node,makePoint(sw.x,sw.y - middleSide), middleSide);
+			return;
+		case NE:
+			insertNodeRecursive(node->node.quadrants[NE],node,makePoint(sw.x + middleSide, sw.y - middleSide), middleSide);
+			return;
+		case SE:
+			insertNodeRecursive(node->node.quadrants[SE],node,makePoint(sw.x + middleSide, sw.y),middleSide);
+			return;
+	}
+}
+
+QD_Node* searchNode(QD_Node* root, Point p){
+	return searchNodeRecursive(root,p,makePoint(0,n_matrix),n_matrix);
+}
+
+QD_Node* searchNodeRecursive(QD_Node* node, Point p, Point sw, int side){
+
+	if(node == NULL) {
+		return NULL;
+	}
+
+	if(node->type == QDLEAF){
+		if(isEqual(node->node.leaf.p, p)){
+			return node;
 		}
+		else{
+			return NULL;
+		}
+	}
+
+	indexQuad index = quadrants(p,sw,side);
+	int middleSide = side/2;
+	switch(index){
+		case SW:
+			return searchNodeRecursive(node->node.quadrants[SW],p,sw, middleSide);
+		case NW:
+			return searchNodeRecursive(node->node.quadrants[NW],p, makePoint(sw.x,sw.y - middleSide), middleSide);
+		case NE:
+			return searchNodeRecursive(node->node.quadrants[NE],p, makePoint(sw.x + middleSide, sw.y - middleSide), middleSide);
+		case SE:
+			return searchNodeRecursive(node->node.quadrants[SE],p, makePoint(sw.x + middleSide, sw.y),middleSide);
+		default: exit(1);
 	}
 }
 
 void removeNode(QD_Node* root, Point destiny){
-	if(root == null){
+	if(root == NULL){
 		return;
 	}
 
-	if(root.type == QDLEAF && isEqual(root.p,destiny)){
+	if(root->type == QDLEAF && isEqual(root->node.leaf.p,destiny)){
 		destroyNode(root);
 	}
 
@@ -45,19 +121,19 @@ void removeNode(QD_Node* root, Point destiny){
 
 void removeNodeRecursive(QD_Node* node, Point destiny, Point sw, int side){
 	indexQuad index = quadrants(destiny,sw,side);
-	if(node->quadrants[index] == null){
+	if(node->node.quadrants[index] == NULL){
 		return;
 	}
 
-	if(isEqual(node->quadrants[index].p, destiny)){
+	if(isEqual(node->node.quadrants[index]->node.leaf.p, destiny)){
 		int sum = 0;
-		destroyNode(node->quadrants[index]);
-		node->quadrants[index] = null;
-		QD_Node* aux = null;
+		destroyNode(node->node.quadrants[index]);
+		node->node.quadrants[index] = NULL;
+		QD_Node* aux = NULL;
 		for(int i = 0; i < nQuadrants; i++){
-			if(node->quadrants[i] != null){
+			if(node->node.quadrants[i] != NULL){
 				sum++;
-				aux = node->quadrants[i];
+				aux = node->node.quadrants[i];
 			}
 		}
 		if(sum == 1){
@@ -70,77 +146,16 @@ void removeNodeRecursive(QD_Node* node, Point destiny, Point sw, int side){
 	int middleSide = side/2;
 	switch(index){
 		case SW:
-			return removeNodeRecursive(node->quadrants[SW],destiny,sw, middleSide);
+			removeNodeRecursive(node->node.quadrants[SW],destiny,sw, middleSide);
+			return;
 		case NW:
-			return removeNodeRecursive(node->quadrants[NW],destiny, makePoint(sw.x,sw.y - middleSide), middleSide);
+			removeNodeRecursive(node->node.quadrants[NW],destiny, makePoint(sw.x,sw.y - middleSide), middleSide);
+			return;
 		case NE:
-			return removeNodeRecursive(node->quadrants[NE],destiny,makePoint(sw.x + middleSide, sw.y - middleSide), middleSide);
+			removeNodeRecursive(node->node.quadrants[NE],destiny,makePoint(sw.x + middleSide, sw.y - middleSide), middleSide);
+			return;
 		case SE:
-			return removeNodeRecursive(node->quadrants[SE],destiny,makePoint(sw.x + middleSide, sw.y),middleSide);
+			removeNodeRecursive(node->node.quadrants[SE],destiny,makePoint(sw.x + middleSide, sw.y),middleSide);
+			return;
 	}
-}
-
-void insertNode(QD_Node* root, QD_Node* node, Point destiny,Point sw, int side){
-
-	if(root == null){
-		root = node;
-		return;
-	}
-
-	if(root.type == QDLEAF){
-		QD_Node* aux = buildNode(QDNODE);
-		indexQuad index = quadrants(root.p,sw,side);
-		aux->quadrants[index] = root;
-		index = quadrants(node.p,sw,side);
-		aux->quadrants[index] = node;
-		return;
-	}
-
-	//Caso recursivo
-	indexQuad index = quadrants(destiny,sw,side);
-	int middleSide = side/2;
-	switch(index){
-		case SW:
-			return insertNode(node->quadrants[SW],node,destiny,sw, middleSide);
-		case NW:
-			return insertNode(node->quadrants[NW],node,destiny,makePoint(sw.x,sw.y - middleSide), middleSide);
-		case NE:
-			return insertNode(node->quadrants[NE],node,destiny,makePoint(sw.x + middleSide, sw.y - middleSide), middleSide);
-		case SE:
-			return insertNode(node->quadrants[SE],node,destiny,makePoint(sw.x + middleSide, sw.y),middleSide);
-	}
-}
-
-QD_Node* startSearch(QD_Node* root, Point p){
-	search(root,p,makePoint(0,n_matrix),n_matrix);
-}
-
-QD_Node* search(QD_Node* node, Point p, Point sw, int side){
-
-	if(node == null) {
-		return null;
-	}
-
-	if(node.type == QDLEAF)){
-		if(isEqual(node.leaf.p, p)){
-				return node;
-		}
-		else{
-			return null;
-		}
-	}
-
-	indexQuad index = quadrants(p,sw,side);
-	int middleSide = side/2;
-	switch(index){
-		case SW:
-			return search(node->quadrants[SW],p,sw, middleSide);
-		case NW:
-			return search(node->quadrants[NW],p, makePoint(sw.x,sw.y - middleSide), middleSide);
-		case NE:
-			return search(node->quadrants[NE],p, makePoint(sw.x + middleSide, sw.y - middleSide), middleSide);
-		case SE:
-			return search(node->quadrants[SE],p, makePoint(sw.x + middleSide, sw.y),middleSide);
-	}
-	return exit(1);
 }

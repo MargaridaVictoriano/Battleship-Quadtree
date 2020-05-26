@@ -29,11 +29,16 @@ typedef struct QD_Node_ {
 QD_Node* buildNode(QD_TNODE);
 void destroyNode(QD_Node*);
 indexQuad quadrants(Point,Point, int);
-void insertNode(QD_Node*,QD_Node*);
-void insertNodeRecursive(QD_Node*,QD_Node*,Point,int);
+QD_Node* insertNode(QD_Node*,QD_Node*);
+QD_Node* insertNodeRecursive(QD_Node*,QD_Node*,Point,int);
+QD_Node* insertNextNode(QD_Node*,QD_Node*,Point,int,indexQuad);
 QD_Node* searchNode(QD_Node*,Point);
 QD_Node* searchNodeRecursive(QD_Node*,Point,Point,int);
-void removeNode(QD_Node*,Point);
-void removeNodeRecursive(QD_Node*,Point,Point,int);
+QD_Node* searchNextNode(QD_Node*,Point,Point,int,indexQuad);
+void destroyQTree(QD_Node*);
+void destroyQTreeRecursive(QD_Node*,Point,int);
+
+//void removeNode(QD_Node*,Point);
+//void removeNodeRecursive(QD_Node*,Point,Point,int);
 
 #endif

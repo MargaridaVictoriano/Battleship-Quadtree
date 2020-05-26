@@ -8,6 +8,11 @@
 #include "board.h"
 #include "utils.h"
 
+#ifdef QUAD
+#include "qtree.h" 
+
+#endif
+
 /**
 * Function name : buildBoard()
 * Usage         : buildBoard();
@@ -22,13 +27,24 @@ Board *buildBoard() {
 	#ifdef QUAD
 	new -> qtree = NULL;
 	
+	// calculo do numero de celulas necesarias para conter n_matrix*n_matrix
+	for(width = 1; width < n_matrix*n_matrix ; width <<= 2);
+	
+	// calculo da raiz quadrada do width
+	int solve = 1;
+	for( ; solve*solve < width; solve++);
+	width = solve;
+	
 	for(int i = 0; i < n_matrix; i++) {
 		for(int j = 0; j < n_matrix; j++) {
+			//printf("----------------------------------\n");
 			QD_Node* new_node = buildNode(QDLEAF);
 			new_node->node.leaf.p = makePoint(j,i);
 			new_node->node.leaf.cell = makeCell(0,0,NULL);
 			
-			insertNode(new -> qtree,new_node);
+			//printf("endereço da raiz = %p\n",(void *)new -> qtree);
+			//printf("insert node cord(%d,%d)\n", new_node -> node.leaf.p.x, new_node -> node.leaf.p.y);
+			new -> qtree = insertNode(new -> qtree,new_node);
 		}
 	}
 	
@@ -60,7 +76,7 @@ Board *buildBoard() {
 
 void destroyBoard(Board* map) {
 	#ifdef QUAD
-	//definir como remover a arvore td
+	destroyQTree(map -> qtree);
 	
 	#else
 	free(map -> map);

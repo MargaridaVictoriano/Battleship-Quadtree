@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-std=c99 -Wpedantic -Wall -Wextra -D QUAD -g
 
-all: battleship
+all: clean battleship
 
 battleship: battleship.c global_var.o coords.o boat.o board.o utils.o cell.o point.o qtree.o
 	$(CC) -o battleship.o battleship.c -c $(CFLAGS)

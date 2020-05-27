@@ -249,27 +249,28 @@ bool attack(Board* att, Board* def) {
     if(getShot(att_cell) == 0){
     	Cell* def_cell = getCell(def,x,y);
     	if (getState(def_cell) == 1) {
-    	  setShot(att_cell,2);
-    	  setState(def_cell,2);
+    	    setShot(att_cell,2);
+    	    setState(def_cell,2);
     	  
-    	  Boat* ship = getBoat(def_cell);
-    	  ship -> hp--;
-    	  setShip(ship, 2, x, y);
-    	  if(ship -> hp == 0) {
-	        printf("The ship %s was just destroyed !\n\n", boatName(ship -> id));
-	        def -> remainingBoats--;
-	      }
-	      else printf("HIT!\n");
+    	    Boat* ship = getBoat(def_cell);
+    	    ship -> hp--;
+    	    setShip(ship, 2, x, y);
+    	    if(ship -> hp == 0) {
+	        	printf("The ship %s was just destroyed !\n\n", boatName(ship -> id));
+	        	def -> remainingBoats--;
+	        }
+	      	else printf("HIT!\n");
 	    }
 	    else {
 	      setShot(att_cell,1);
 	      setState(def_cell,3);
 	      printf("MISS!\n");
     	}
-	}
-    return true;
+    	return true;
+    }
   }
-  else printf("Invalid input. Please try again.\n");
+  
+  printf("Invalid input. Please try again.\n");
   return false;
 }
 

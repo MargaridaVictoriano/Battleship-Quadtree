@@ -4,6 +4,11 @@
 #include <unistd.h>
 #include <time.h>
 
+#include <semaphore.h>
+#include <sys/stat.h>
+//#include <sys/types.h>
+#include <fcntl.h>
+
 #include "global_var.h"
 #include "coords.h"
 #include "boat.h"
@@ -304,6 +309,21 @@ bool gameInterface(Board* p) {
   return false;
 }
 
+void printPlayer1(){
+	system("clear");
+	printf(":*~*:._.::*~*:._.::*~*:._.:\n");
+	printf(":.        Player1        .:\n");
+	printf(":*~*:._.::*~*:._.::*~*:._.:\n\n");
+}
+
+void printPlayer2(){
+	system("clear");
+	printf(":*~*:._.::*~*:._.::*~*:._.:\n");
+	printf(":.        Player2        .:\n");
+	printf(":*~*:._.::*~*:._.::*~*:._.:\n\n");
+}
+
+
 /**
 * Function name : game()
 * Usage         : game(Board*,Board*);
@@ -316,9 +336,7 @@ void game(Board* p1, Board* p2) {
   while(p1 -> remainingBoats > 0 && p2 -> remainingBoats > 0) {
 
     //Player1 attack
-    printf(":*~*:._.::*~*:._.::*~*:._.:\n");
-    printf(":.        Player1        .:\n");
-    printf(":*~*:._.::*~*:._.::*~*:._.:\n");
+    printPlayer1();
     while(!gameInterface(p1));
     printf("Player1 please select the attack coordinates.\n");
     while(!attack(p1,p2));
@@ -328,9 +346,7 @@ void game(Board* p1, Board* p2) {
     if(p2 -> remainingBoats == 0) break;
 
     //Player2 attack
-    printf(":*~*:._.::*~*:._.::*~*:._.:\n");
-    printf(":.        Player2        .:\n");
-    printf(":*~*:._.::*~*:._.::*~*:._.:\n");
+    printPlayer2();
     while(!gameInterface(p2));
     printf("Player2 please select the attack coordinates.\n");
     while(!attack(p2,p1));
@@ -344,41 +360,327 @@ void game(Board* p1, Board* p2) {
 
 }
 
+void defaultMode(){
+	pickMatrixSize();
+	system("clear");
+		
+	pickNumberBoats();
+	system("clear");
+	
+	//Board player1
+	printPlayer1();
+	Board* p1 = (Board *) buildBoard();
+	placeBoat(p1);
+	sleep(3);
+	system("clear");
+	
+	//Board player2
+	printPlayer2();
+	Board* p2 = (Board *) buildBoard();
+	placeBoat(p2);
+	sleep(3);
+	system("clear");
+	
+	game(p1,p2);
+	
+	destroyBoard(p1);
+	destroyBoard(p2);
+}
+
+void server_or_client(){
+	int mode;
+	while (1) {
+		printf("\n");
+		printf("Select one of the following options.\n");
+		printf("0 :: Client\n");
+		printf("1 :: Server\n");
+		scanf("%d",&mode);
+		flushInput();
+		if (mode >= 0 && mode <= 1) break;
+		printf("Invalid mode. Please try again.\n");
+	}
+	
+	operationMode = mode;
+}
+
+#define SNAME "/turn"
+#define FNAME "file"
+
+int advBoats;
+
+void setValue(sem_t* sem, int value){
+	int temp;
+	sem_getvalue(sem,&temp);
+	
+	if(temp == value) return;
+	
+	while(temp > value){
+		sem_trywait(sem);
+		sem_getvalue(sem,&temp);
+	}
+	
+	while(temp < value){
+		sem_post(sem);
+		sem_getvalue(sem,&temp);
+	}
+}
+
+int getValue(sem_t* sem){
+	int value;
+	sem_getvalue(sem,&value);
+	return value;
+}
+
+void waitValue(sem_t* sem, int value){
+	for(int temp; temp != value; sem_getvalue(sem,&temp));
+}
+
+void attackRemote(Board* p, sem_t* sem){
+
+	if(!operationMode) waitValue(sem,4);
+	else waitValue(sem,6);
+	
+	FILE* file = fopen(FNAME,"r");
+	
+	int x, y;
+
+	fscanf(file,"%d", &x);
+	fscanf(file,"%d", &y);
+	
+	fclose(file);
+	file = fopen(FNAME,"w");
+	
+	Cell* cell = getCell(p,x,y);
+	if (getState(cell) == 1) {
+		setState(cell,2);
+					  
+		Boat* ship = getBoat(cell);
+		ship -> hp--;
+		setShip(ship, 2, x, y);
+		if(ship -> hp == 0) {
+			p -> remainingBoats--;
+			fprintf(file,"2");
+		}
+		else fprintf(file,"1");
+	}
+	else {
+		setState(cell,3);
+		fprintf(file,"0");
+	}
+	
+	fclose(file);
+	
+	if(!operationMode) setValue(sem,3);
+	else setValue(sem,5);
+}
+
+bool attackLocal(Board* p,sem_t* sem){
+	int x, y;
+
+	scanf("%d", &x);
+	scanf("%d", &y);
+	flushInput();
+	
+	if(x >= 0 && y >= 0 && x < n_matrix && y < n_matrix){
+		Cell* cell = getCell(p,x,y);
+		if(getShot(cell) == 0){
+			FILE* file = fopen(FNAME,"w");
+			
+			fprintf(file,"%d %d\n",x,y);
+			
+			fclose(file);
+			
+			if(operationMode) setValue(sem,4);
+			else setValue(sem,6);
+			
+			if(operationMode) waitValue(sem,3);
+			else waitValue(sem,5);
+			
+			file = fopen(FNAME,"r");
+			
+			char boatId;
+			int shotValue;
+			
+			fscanf(file,"%d",&shotValue);
+			if(shotValue == 2){
+				advBoats--;
+				int temp;
+				fscanf(file,"%d",&temp);
+				boatId = (char)temp;
+			}
+			
+			if(shotValue == 0){
+				setShot(cell,1);
+				printf("MISS!\n");
+			}
+			else if(shotValue == 1){
+				setShot(cell,2);
+				printf("HIT!\n");
+			}
+			else if(shotValue == 2){
+				setShot(cell,2);
+				printf("The ship %s was just destroyed !\n\n", boatName(boatId));
+			}
+
+			fclose(file);
+			return true;
+		}
+	}
+	
+	printf("Invalid input. Please try again.\n");
+	return false;
+}
+
+void gameS(Board* p, sem_t* sem){
+	
+	p -> remainingBoats = sum_boats;
+	
+	// modo de comunicaçao
+	// 0 falhou
+	// 1 acertou
+	// 2 destruio o navio
+	
+	
+	advBoats = sum_boats;
+	
+	if(operationMode){ //Player1 attack
+		
+		while(p -> remainingBoats > 0 && advBoats > 0) {
+			
+			waitValue(sem, 2);
+			setValue(sem,3);	
+				
+			printPlayer1();
+			while(!gameInterface(p));
+			
+			printf("Player1 please select the attack coordinates.\n");
+			while(!attackLocal(p, sem));
+			
+			if(advBoats == 0) break;
+			
+			setValue(sem,5);
+			
+			// ----- mode escuta ----
+			attackRemote(p, sem);
+			
+		}
+	}
+	else{ //Player2 attack
+		
+		while(p -> remainingBoats > 0 && advBoats > 0) {
+			
+			setValue(sem, 2);
+			waitValue(sem,3);
+			// ----- mode escuta ----
+			attackRemote(p, sem);
+			
+			if(p -> remainingBoats == 0) break;
+			
+			// ----- mode attack ----
+			waitValue(sem,5);
+			
+			printPlayer2();
+			while(!gameInterface(p));
+			
+			printf("Player2 please select the attack coordinates.\n");
+			while(!attackLocal(p, sem));
+		}
+	}
+
+	if (advBoats == 0) printf("You Win !\n");
+	else printf("You Lose !\n");
+}
+
+void twoShellwithSemaphoresandFiles(){
+	server_or_client();
+	
+	FILE* file = NULL;
+	
+	sem_t *sem = sem_open(SNAME, O_CREAT , S_IRUSR | S_IWUSR , 0);
+	setValue(sem,0);
+	
+	if(operationMode){ // se for server
+		
+		pickMatrixSize();
+		system("clear");		
+		pickNumberBoats();
+		system("clear");
+		
+		file = fopen(FNAME,"w");
+		
+		fprintf(file,"%d \n",n_matrix);
+		for(int i=0; i<n_boats; i++){
+			fprintf(file,"%d ",boat_number[i]);
+		}
+		
+		fclose(file);
+		
+		sem_post(sem);
+		
+		//Board player1
+		printPlayer1();
+		Board* p1 = (Board *) buildBoard();
+		placeBoat(p1);
+		
+		gameS(p1, sem);
+		
+		destroyBoard(p1);
+	}
+	else { // se for o cliente
+		sem_wait(sem);
+		
+		system("clear");
+		file = fopen(FNAME,"r");
+		
+		fscanf(file,"%d",&n_matrix);
+		for(int i=0; i<n_boats; i++){
+			fscanf(file,"%d",&boat_number[i]);
+			sum_boats += boat_number[i];
+		}
+		
+		fclose(file);
+		
+		//Board player2
+		printPlayer2();
+		Board* p2 = (Board *) buildBoard();
+		placeBoat(p2);
+		
+		setValue(sem,10);
+		gameS(p2, sem);
+		
+		destroyBoard(p2);
+	}
+	
+	sem_close(sem);
+	sem_unlink(SNAME);
+}
+
+void gamingMode(){
+	int mode;
+	while (1) {
+		printf("\n");
+		printf("Select one of the following options.\n");
+		printf("1 :: Defaut Mode\n");
+		printf("2 :: TwoShell, with semaphores and text files\n");
+		printf("3 :: TwoShell, with pipes\n");
+		scanf("%d",&mode);
+		flushInput();
+		if (mode >= 1 && mode <= 3) break;
+		printf("Invalid mode. Please try again.\n");
+	}
+	
+	switch(mode) {
+		case 1: defaultMode(); break;
+		case 2: twoShellwithSemaphoresandFiles(); break;
+		//case 3: twoShellwithPipes(); break;
+	}
+}
+
 int main() {
-  srand(time(NULL)); // randomize seed
-
-  system("clear");
-  Battleship();
-
-  pickMatrixSize();
-  system("clear");
-
-  pickNumberBoats();
-  system("clear");
-
-  //Board player1
-  printf(":*~*:._.::*~*:._.::*~*:._.:\n");
-  printf(":.        Player1        .:\n");
-  printf(":*~*:._.::*~*:._.::*~*:._.:\n");
-  printf("\n");
-  Board* p1 = (Board *) buildBoard();
-  placeBoat(p1);
-  sleep(3);
-  system("clear");
-
-  //Board player2
-  printf(":*~*:._.::*~*:._.::*~*:._.:\n");
-  printf(":.        Player2        .:\n");
-  printf(":*~*:._.::*~*:._.::*~*:._.:\n");
-  printf("\n");
-
-  Board* p2 = (Board *) buildBoard();
-  placeBoat(p2);
-  sleep(3);
-  system("clear");
-
-  game(p1,p2);
-
-  destroyBoard(p1);
-  destroyBoard(p2);
+	srand(time(NULL)); // randomize seed
+	
+	system("clear");
+	Battleship();
+	
+	gamingMode();
 }

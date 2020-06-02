@@ -83,7 +83,7 @@ void destroyBoard(Board* map) {
 	
 	#endif
 	
-	for(int i=0; i< map -> size_boats; i++){
+	for(int i=0; i < map -> size_boats; i++){
 		destroyBoat(map -> boats[i]);
 	}
 	free(map -> boats);

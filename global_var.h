@@ -6,6 +6,7 @@
 extern int n_matrix;     
 extern int sum_boats;    
 extern int boat_number[];
+extern int operationMode;
 
 #ifdef QUAD
 extern int width;

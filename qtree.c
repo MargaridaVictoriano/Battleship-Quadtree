@@ -10,7 +10,7 @@ const int canonicalCoords[4][2] = {{0,0},{0,1},{1,1},{1,0}};
 
 /**
 * Funtion name : buildNode()
-* Usage				 : buildNode(QD_TNODE)
+* Usage				 : buildNode(QD_TNODE);
 * Definition   : This function builds and returns a new node.
 */
 QD_Node* buildNode(QD_TNODE type){
@@ -22,8 +22,8 @@ QD_Node* buildNode(QD_TNODE type){
 
 /**
 * Function name : destroyNode()
-* Usage        : destroyNode(QD_Node*)
-* Definition   : This function receives a node and frees the memory.
+* Usage        : destroyNode(QD_Node*);
+* Definition   : This function receives a node and frees the corresponding memory.
 */
 void destroyNode(QD_Node* node){
 	free(node);
@@ -31,7 +31,7 @@ void destroyNode(QD_Node* node){
 
 /**
 * Function name : quadrants()
-* Usage					: quadrants(Point ,Point, int)
+* Usage					: quadrants(Point ,Point, int);
 * Definition    : This function receives information about a point and returns the corresponding quadrant index.
 */
 indexQuad quadrants(Point p,Point corners, int side) {
@@ -52,7 +52,7 @@ indexQuad quadrants(Point p,Point corners, int side) {
 
 /**
 * Function name : insertNode()
-* Usage 				: insertNode(QD_Node*, QD_Node*)
+* Usage 				: insertNode(QD_Node*, QD_Node*);
 *Definition     : This function receives the root node,a given node and returns the recursive funtion to insert a new node.
 */
 
@@ -62,10 +62,10 @@ QD_Node* insertNode(QD_Node* root, QD_Node* node){
 
 /**
 * Function name : insertNodeRecursive()
-* Usage         : insertNodeRecursive(QD_Node*, QD_Node*, Point, int)
+* Usage         : insertNodeRecursive(QD_Node*, QD_Node*, Point, int);
 * Definition    : This function inserts a node recursively.
 * 								If the tree is empty, we insert and return the root node.
-* 								If the root is a leaf node,
+* 								If the root is a leaf node, it transorms the leaf into a node and copies the old leaf into the new subtree.
 */
 QD_Node* insertNodeRecursive(QD_Node* root, QD_Node* node, Point sw, int side){
 
@@ -99,8 +99,8 @@ QD_Node* insertNodeRecursive(QD_Node* root, QD_Node* node, Point sw, int side){
 
 /**
 * Function name : insertNextNode()
-* Usage         : insertNextNode(QD_Node*, QD_Node*, Point , int, indexQuad)
-* Definition    :
+* Usage         : insertNextNode(QD_Node*, QD_Node*, Point , int, indexQuad);
+* Definition    : Auxiliary function to assist recursion for insertion.
 */
 QD_Node* insertNextNode(QD_Node* root, QD_Node* node, Point sw, int side, indexQuad index){
 	int middleSide = side/2;
@@ -153,7 +153,7 @@ QD_Node* searchNodeRecursive(QD_Node* node, Point p, Point sw, int side){
 /**
 ** Function name : searchNextNode()
 * Usage          : searchNextNode(QD_Node*, Point, Point , int, indexQuad)
-* Definition     :
+* Definition     : Auxiliary function to assist recursion for search.
 */
 QD_Node* searchNextNode(QD_Node* root, Point p, Point sw, int side, indexQuad index){
 	int middleSide = side/2;

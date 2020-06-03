@@ -1,10 +1,15 @@
 CC=gcc
-CFLAGS=-std=c99 -Wpedantic -Wall -Wextra -D QUAD -g
-LDFLAGS=-lm -lpthread -lrt -g
+CFLAGS=-std=c99 -Wpedantic -Wall -Wextra
+LDFLAGS=-lm -lpthread -lrt
 
 all: clean battleship
+override 
+quad: battleship.c global_var.o coords.o boat.o board.o utils.o cell.o point.o qtree.o
+	$(CC) -o battleship.o battleship.c -c $(CFLAGS)
+	$(CC) -o battleship *.o $(LDFLAGS)
+	rm -f *.o
 
-battleship: battleship.c global_var.o coords.o boat.o board.o utils.o cell.o point.o qtree.o
+battleship: battleship.c global_var.o coords.o boat.o board.o utils.o cell.o
 	$(CC) -o battleship.o battleship.c -c $(CFLAGS)
 	$(CC) -o battleship *.o $(LDFLAGS)
 	rm -f *.o

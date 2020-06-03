@@ -38,7 +38,5 @@ QD_Node* searchNextNode(QD_Node*,Point,Point,int,indexQuad);
 void destroyQTree(QD_Node*);
 void destroyQTreeRecursive(QD_Node*,Point,int);
 
-//void removeNode(QD_Node*,Point);
-//void removeNodeRecursive(QD_Node*,Point,Point,int);
 
 #endif

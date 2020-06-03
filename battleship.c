@@ -374,7 +374,7 @@ void game(Board* p1, Board* p2) {
 /**
 * Function name : defaultMode()
 * Usage         : defaultMode();
-* Definition    : This functions allows the user to play using one shell.
+* Definition    : This functions allows the users to play using the same shell.
 */
 
 void defaultMode(){
@@ -405,17 +405,17 @@ void defaultMode(){
 }
 
 /**
-* Function name : serverOrClient()
-* Usage         : serverOrClient();
+* Function name : pickPlayer()
+* Usage         : pickPlayer();
 * Definition    : This function allows the users to play using two shells.
 */
-void serverOrClient(){
+void pickPlayer(){
 	int mode;
 	while (1) {
 		printf("\n");
 		printf("Select one of the following options.\n");
-		printf("0 :: Client\n");
-		printf("1 :: Server\n");
+		printf("0 :: Player1\n");
+		printf("1 :: Player2\n");
 		scanf("%d",&mode);
 		flushInput();
 		if (mode >= 0 && mode <= 1) break;
@@ -467,7 +467,7 @@ int getValue(sem_t* sem){
 /**
 * Function name : waitValue()
 * Usage         : setValue(sem_t* sem, int value);
-* Definition    :
+* Definition    : Waits for the semaphore to get to a specific value.
 */
 void waitValue(sem_t* sem, int value){
 	for(int temp; temp != value; sem_getvalue(sem,&temp));
@@ -476,7 +476,7 @@ void waitValue(sem_t* sem, int value){
 /**
 * Function name : attackRemote()
 * Usage         : attackRemote(Board*, sem_t*);
-* Definition    :
+* Definition    : Receives the attack request, processes the information and answers whether it was hit or miss.
 */
 void attackRemote(Board* p, sem_t* sem){
 
@@ -521,7 +521,7 @@ void attackRemote(Board* p, sem_t* sem){
 /**
 * Function name : attacklocal()
 * Usage         : attackLocal(Board*,sem_t*);
-* Definition    :
+* Definition    : Prepares the attack, sents the request to the other player and acts accordingly.
 */
 bool attackLocal(Board* p,sem_t* sem){
 	int x, y;
@@ -583,17 +583,12 @@ bool attackLocal(Board* p,sem_t* sem){
 /**
 * Function name : gameS()
 * Usage         : gameS(Board*, sem_t*);
-* Definition    :
+* Definition    : This function attacks with the received coordinates until one of the players win.
+*                 The file acts as an intermediary to process the requests and the semaphore controls the flow.
 */
 void gameS(Board* p, sem_t* sem){
 
 	p -> remainingBoats = sum_boats;
-
-	// modo de comunicaçao
-	// 0 falhou
-	// 1 acertou
-	// 2 destruio o navio
-
 
 	advBoats = sum_boats;
 
@@ -648,17 +643,17 @@ void gameS(Board* p, sem_t* sem){
 /**
 * Function name : twoShellwithSemaphoresandFiles()
 * Usage         : twoShellwithSemaphoresandFiles();
-* Definition    :
+* Definition    : initializes the game interface in both shells and starts the game.
 */
 void twoShellwithSemaphoresandFiles(){
-	serverOrClient();
+	pickPlayer();
 
 	FILE* file = NULL;
 
 	sem_t *sem = sem_open(SNAME, O_CREAT , S_IRUSR | S_IWUSR , 0);
 	setValue(sem,0);
 
-	if(operationMode){ // se for server
+	if(operationMode){ // if its server
 
 		pickMatrixSize();
 		system("clear");
@@ -685,7 +680,7 @@ void twoShellwithSemaphoresandFiles(){
 
 		destroyBoard(p1);
 	}
-	else { // se for o cliente
+	else { //if its client
 		sem_wait(sem);
 
 		system("clear");

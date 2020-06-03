@@ -6,10 +6,13 @@
 #include "boat.h"
 #include "qtree.h"
 
-//#include <stdio.h>
-
 const int canonicalCoords[4][2] = {{0,0},{0,1},{1,1},{1,0}};
 
+/**
+* Funtion name : buildNode()
+* Usage				 : buildNode(QD_TNODE)
+* Definition   : This function builds and returns a new node.
+*/
 QD_Node* buildNode(QD_TNODE type){
 	QD_Node* new = (QD_Node *)malloc(sizeof(QD_Node));
 	if(new == NULL) exit(-1);
@@ -17,10 +20,20 @@ QD_Node* buildNode(QD_TNODE type){
 	return new;
 }
 
+/**
+* Function name : destroyNode()
+* Usage        : destroyNode(QD_Node*)
+* Definition   : This function receives a node and frees the memory.
+*/
 void destroyNode(QD_Node* node){
 	free(node);
 }
 
+/**
+* Function name : quadrants()
+* Usage					: quadrants(Point ,Point, int)
+* Definition    : This function receives information about a point and returns the corresponding quadrant index.
+*/
 indexQuad quadrants(Point p,Point corners, int side) {
 	int middleX = corners.x + side/2, middleY =  corners.y + side/2;
 	if(p.x < middleX){
@@ -37,47 +50,61 @@ indexQuad quadrants(Point p,Point corners, int side) {
 	}
 }
 
+/**
+* Function name : insertNode()
+* Usage 				: insertNode(QD_Node*, QD_Node*)
+*Definition     : This function receives the root node,a given node and returns the recursive funtion to insert a new node.
+*/
+
 QD_Node* insertNode(QD_Node* root, QD_Node* node){
 	return insertNodeRecursive(root, node, makePoint(0,0), width);
 }
 
+/**
+* Function name : insertNodeRecursive()
+* Usage         : insertNodeRecursive(QD_Node*, QD_Node*, Point, int)
+* Definition    : This function inserts a node recursively.
+* 								If the tree is empty, we insert and return the root node.
+* 								If the root is a leaf node,
+*/
 QD_Node* insertNodeRecursive(QD_Node* root, QD_Node* node, Point sw, int side){
-	
+
 	if(root == NULL){
-		//printf("inseri num no null, node (%d,%d)\n\n",node -> node.leaf.p.x,node -> node.leaf.p.y);
 		root = node;
 		return root;
 	}
 
 	if(root->type == QDLEAF){
-		//printf("fiz split para uma nova arvore\n");
-		
+
 		QD_Node* aux = buildNode(QDLEAF);
 		aux -> node.leaf.p = root -> node.leaf.p;
 		aux -> node.leaf.cell = root -> node.leaf.cell;
-		
+
 		root -> type = QDNODE;
 		for(int i = 0; i < nQuadrants ; i++){
 			root -> node.quadrants[i] = NULL;
 		}
-		
-		//printf("(%d,%d), side = %d\n",sw.x,sw.y,side);
+
 		indexQuad index = quadrants(aux -> node.leaf.p,sw,side);
 		root -> node.quadrants[index] = insertNextNode(root,aux,sw,side,index);
-		
+
 	}
 
-	//Caso recursivo
+	//Recursive Case
 	indexQuad index = quadrants(node -> node.leaf.p,sw,side);
-	//printf("(%d,%d), side = %d\n",sw.x,sw.y,side);
 	root -> node.quadrants[index] = insertNextNode(root,node,sw,side,index);
-	
+
 	return root;
 }
 
+/**
+* Function name : insertNextNode()
+* Usage         : insertNextNode(QD_Node*, QD_Node*, Point , int, indexQuad)
+* Definition    :
+*/
 QD_Node* insertNextNode(QD_Node* root, QD_Node* node, Point sw, int side, indexQuad index){
 	int middleSide = side/2;
-	
+
 	return insertNodeRecursive(
 		root -> node.quadrants[index],
 		node,
@@ -89,9 +116,20 @@ QD_Node* insertNextNode(QD_Node* root, QD_Node* node, Point sw, int side, indexQ
 		);
 }
 
+/**
+* Function name : searchNode(QD_Node*, Point)
+* Usage					: searchNode(QD_Node*, Point)
+* Definition    : This functions starts the search from the root node and returns the recursive search funtion.
+*/
 QD_Node* searchNode(QD_Node* root, Point p){
 	return searchNodeRecursive(root,p,makePoint(0,0),width);
 }
+
+/**
+* Function name : searchNodeRecursive()
+* Usage         : searchNodeRecursive(QD_Node*, Point, Point, int)
+* Definition    : This function searches the node recursively.
+*/
 
 QD_Node* searchNodeRecursive(QD_Node* node, Point p, Point sw, int side){
 
@@ -112,9 +150,14 @@ QD_Node* searchNodeRecursive(QD_Node* node, Point p, Point sw, int side){
 	return searchNextNode(node, p, sw, side, index);
 }
 
+/**
+** Function name : searchNextNode()
+* Usage          : searchNextNode(QD_Node*, Point, Point , int, indexQuad)
+* Definition     :
+*/
 QD_Node* searchNextNode(QD_Node* root, Point p, Point sw, int side, indexQuad index){
 	int middleSide = side/2;
-	
+
 	return searchNodeRecursive(
 		root -> node.quadrants[index],
 		p,
@@ -125,12 +168,21 @@ QD_Node* searchNextNode(QD_Node* root, Point p, Point sw, int side, indexQuad in
 		middleSide
 		);
 }
-
+/**
+* Function name : destroyQTree()
+* Usage         : destroyQTree(QD_Node*)
+* Definition    : This functions receives the root node and calls the recursive funtion to start the destroying process.
+*/
 void destroyQTree(QD_Node* root){
 	destroyQTreeRecursive(root,makePoint(0,0),width);
 	return;
 }
 
+/**
+* Function name : destroyQTreeRecursive()
+* Usage         : destroyQTreeRecursive(QD_Node*, Point, int)
+* Definition    : This function destroys the tree recursively.
+*/
 void destroyQTreeRecursive(QD_Node* node, Point sw, int side){
 	if(node == NULL) {
 		return;
@@ -140,7 +192,7 @@ void destroyQTreeRecursive(QD_Node* node, Point sw, int side){
 		destroyNode(node);
 		return;
 	}
-	
+
 	int middleSide = side/2;
 	for(int i = 0; i < nQuadrants ; i++){
 		destroyQTreeRecursive(
@@ -152,63 +204,7 @@ void destroyQTreeRecursive(QD_Node* node, Point sw, int side){
 			middleSide
 			);
 	}
-	
+
 	destroyNode(node);
 	return;
 }
-
-/*void removeNode(QD_Node* root, Point destiny){
-	if(root == NULL){
-		return;
-	}
-
-	if(root->type == QDLEAF){
-		if(isEqual(root->node.leaf.p,destiny)){
-			destroyNode(root);
-		}
-		return;
-	}
-
-	removeNodeRecursive(root,destiny,makePoint(0,0),width);
-}
-
-void removeNodeRecursive(QD_Node* node, Point destiny, Point sw, int side){
-	indexQuad index = quadrants(destiny,sw,side);
-	if(node->node.quadrants[index] == NULL){
-		return;
-	}
-
-	if(isEqual(node->node.quadrants[index]->node.leaf.p, destiny)){
-		int sum = 0;
-		destroyNode(node->node.quadrants[index]);
-		node->node.quadrants[index] = NULL;
-		QD_Node* aux = NULL;
-		for(int i = 0; i < nQuadrants; i++){
-			if(node->node.quadrants[i] != NULL){
-				sum++;
-				aux = node->node.quadrants[i];
-			}
-		}
-		if(sum == 1){
-			destroyNode(node);
-			node = aux;
-		}
-	}
-
-	index = quadrants(destiny,sw,side);
-	int middleSide = side/2;
-	switch(index){
-		case SW:
-			removeNodeRecursive(node->node.quadrants[SW],destiny,sw, middleSide);
-			return;
-		case NW:
-			removeNodeRecursive(node->node.quadrants[NW],destiny, makePoint(sw.x,sw.y + middleSide), middleSide);
-			return;
-		case NE:
-			removeNodeRecursive(node->node.quadrants[NE],destiny,makePoint(sw.x + middleSide, sw.y + middleSide), middleSide);
-			return;
-		case SE:
-			removeNodeRecursive(node->node.quadrants[SE],destiny,makePoint(sw.x + middleSide, sw.y),middleSide);
-			return;
-	}
-}*/

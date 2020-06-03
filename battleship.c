@@ -6,7 +6,6 @@
 
 #include <semaphore.h>
 #include <sys/stat.h>
-//#include <sys/types.h>
 #include <fcntl.h>
 
 #include "global_var.h"
@@ -157,7 +156,7 @@ void pickBoatPosition(Board* map) {
   for(int i=0; i<n_boats; i++){
     copy[i] = boat_number[i];
   }
-  
+
   for (int i = 0; i < sum_boats;) {
     char boatId;
     int x,y,rot;
@@ -248,7 +247,7 @@ bool attack(Board* att, Board* def) {
   scanf("%d", &x);
   scanf("%d", &y);
   flushInput();
-  
+
   if(x >= 0 && y >= 0 && x < n_matrix && y < n_matrix) {
     Cell* att_cell = getCell(att,x,y);
     if(getShot(att_cell) == 0){
@@ -256,7 +255,7 @@ bool attack(Board* att, Board* def) {
     	if (getState(def_cell) == 1) {
     	    setShot(att_cell,2);
     	    setState(def_cell,2);
-    	  
+
     	    Boat* ship = getBoat(def_cell);
     	    ship -> hp--;
     	    setShip(ship, 2, x, y);
@@ -274,7 +273,7 @@ bool attack(Board* att, Board* def) {
     	return true;
     }
   }
-  
+
   printf("Invalid input. Please try again.\n");
   return false;
 }
@@ -309,12 +308,24 @@ bool gameInterface(Board* p) {
   return false;
 }
 
+/**
+* Function name : printPlayer1()
+* Usage         : printPlayer1()
+* Definition    : This function prints the player turn to play.
+*/
+
 void printPlayer1(){
 	system("clear");
 	printf(":*~*:._.::*~*:._.::*~*:._.:\n");
 	printf(":.        Player1        .:\n");
 	printf(":*~*:._.::*~*:._.::*~*:._.:\n\n");
 }
+
+/**
+* Function name : printPlayer2()
+* Usage         : printPlayer2()
+* Definition    : This function prints the player turn to play.
+*/
 
 void printPlayer2(){
 	system("clear");
@@ -360,34 +371,45 @@ void game(Board* p1, Board* p2) {
 
 }
 
+/**
+* Function name : defaultMode()
+* Usage         : defaultMode();
+* Definition    : This functions allows the user to play using one shell.
+*/
+
 void defaultMode(){
 	pickMatrixSize();
 	system("clear");
-		
+
 	pickNumberBoats();
 	system("clear");
-	
+
 	//Board player1
 	printPlayer1();
 	Board* p1 = (Board *) buildBoard();
 	placeBoat(p1);
 	sleep(3);
 	system("clear");
-	
+
 	//Board player2
 	printPlayer2();
 	Board* p2 = (Board *) buildBoard();
 	placeBoat(p2);
 	sleep(3);
 	system("clear");
-	
+
 	game(p1,p2);
-	
+
 	destroyBoard(p1);
 	destroyBoard(p2);
 }
 
-void server_or_client(){
+/**
+* Function name : serverOrClient()
+* Usage         : serverOrClient();
+* Definition    : This function allows the users to play using two shells.
+*/
+void serverOrClient(){
 	int mode;
 	while (1) {
 		printf("\n");
@@ -399,7 +421,7 @@ void server_or_client(){
 		if (mode >= 0 && mode <= 1) break;
 		printf("Invalid mode. Please try again.\n");
 	}
-	
+
 	operationMode = mode;
 }
 
@@ -408,52 +430,73 @@ void server_or_client(){
 
 int advBoats;
 
+/**
+* Function name : setValue()
+* Usage         : setValue(sem_t* sem, int value);
+* Definition    : This function sets the semaphore value.
+*/
+
 void setValue(sem_t* sem, int value){
 	int temp;
 	sem_getvalue(sem,&temp);
-	
+
 	if(temp == value) return;
-	
+
 	while(temp > value){
 		sem_trywait(sem);
 		sem_getvalue(sem,&temp);
 	}
-	
+
 	while(temp < value){
 		sem_post(sem);
 		sem_getvalue(sem,&temp);
 	}
 }
 
+/**
+* Function name : getValue()
+* Usage         : setValue(sem_t* sem);
+* Definition    : This function returns the semaphore value.
+*/
 int getValue(sem_t* sem){
 	int value;
 	sem_getvalue(sem,&value);
 	return value;
 }
 
+/**
+* Function name : waitValue()
+* Usage         : setValue(sem_t* sem, int value);
+* Definition    :
+*/
 void waitValue(sem_t* sem, int value){
 	for(int temp; temp != value; sem_getvalue(sem,&temp));
 }
 
+/**
+* Function name : attackRemote()
+* Usage         : attackRemote(Board*, sem_t*);
+* Definition    :
+*/
 void attackRemote(Board* p, sem_t* sem){
 
 	if(!operationMode) waitValue(sem,4);
 	else waitValue(sem,6);
-	
+
 	FILE* file = fopen(FNAME,"r");
-	
+
 	int x, y;
 
 	fscanf(file,"%d", &x);
 	fscanf(file,"%d", &y);
-	
+
 	fclose(file);
 	file = fopen(FNAME,"w");
-	
+
 	Cell* cell = getCell(p,x,y);
 	if (getState(cell) == 1) {
 		setState(cell,2);
-					  
+
 		Boat* ship = getBoat(cell);
 		ship -> hp--;
 		setShip(ship, 2, x, y);
@@ -467,40 +510,46 @@ void attackRemote(Board* p, sem_t* sem){
 		setState(cell,3);
 		fprintf(file,"0");
 	}
-	
+
 	fclose(file);
-	
+
 	if(!operationMode) setValue(sem,3);
 	else setValue(sem,5);
 }
 
+
+/**
+* Function name : attacklocal()
+* Usage         : attackLocal(Board*,sem_t*);
+* Definition    :
+*/
 bool attackLocal(Board* p,sem_t* sem){
 	int x, y;
 
 	scanf("%d", &x);
 	scanf("%d", &y);
 	flushInput();
-	
+
 	if(x >= 0 && y >= 0 && x < n_matrix && y < n_matrix){
 		Cell* cell = getCell(p,x,y);
 		if(getShot(cell) == 0){
 			FILE* file = fopen(FNAME,"w");
-			
+
 			fprintf(file,"%d %d\n",x,y);
-			
+
 			fclose(file);
-			
+
 			if(operationMode) setValue(sem,4);
 			else setValue(sem,6);
-			
+
 			if(operationMode) waitValue(sem,3);
 			else waitValue(sem,5);
-			
+
 			file = fopen(FNAME,"r");
-			
+
 			char boatId;
 			int shotValue;
-			
+
 			fscanf(file,"%d",&shotValue);
 			if(shotValue == 2){
 				advBoats--;
@@ -508,7 +557,7 @@ bool attackLocal(Board* p,sem_t* sem){
 				fscanf(file,"%d",&temp);
 				boatId = (char)temp;
 			}
-			
+
 			if(shotValue == 0){
 				setShot(cell,1);
 				printf("MISS!\n");
@@ -526,62 +575,67 @@ bool attackLocal(Board* p,sem_t* sem){
 			return true;
 		}
 	}
-	
+
 	printf("Invalid input. Please try again.\n");
 	return false;
 }
 
+/**
+* Function name : gameS()
+* Usage         : gameS(Board*, sem_t*);
+* Definition    :
+*/
 void gameS(Board* p, sem_t* sem){
-	
+
 	p -> remainingBoats = sum_boats;
-	
+
 	// modo de comunicaçao
 	// 0 falhou
 	// 1 acertou
 	// 2 destruio o navio
-	
-	
+
+
 	advBoats = sum_boats;
-	
+
 	if(operationMode){ //Player1 attack
-		
+
 		while(p -> remainingBoats > 0 && advBoats > 0) {
-			
+
 			waitValue(sem, 2);
-			setValue(sem,3);	
-				
+			setValue(sem,3);
+
 			printPlayer1();
 			while(!gameInterface(p));
-			
+
 			printf("Player1 please select the attack coordinates.\n");
 			while(!attackLocal(p, sem));
-			
+
 			if(advBoats == 0) break;
-			
+
 			setValue(sem,5);
-			
+
 			// ----- mode escuta ----
 			attackRemote(p, sem);
-			
+
 		}
 	}
 	else{ //Player2 attack
-		
+
 		while(p -> remainingBoats > 0 && advBoats > 0) {
-			
+
 			setValue(sem, 2);
 			waitValue(sem,3);
 			// ----- mode escuta ----
 			attackRemote(p, sem);
-			
+
 			if(p -> remainingBoats == 0) break;
-			
+
 			// ----- mode attack ----
 			waitValue(sem,5);
-			
+
 			printPlayer2();
 			while(!gameInterface(p));
-			
+
 			printf("Player2 please select the attack coordinates.\n");
 			while(!attackLocal(p, sem));
 		}
@@ -591,70 +645,79 @@ void gameS(Board* p, sem_t* sem){
 	else printf("You Lose !\n");
 }
 
+/**
+* Function name : twoShellwithSemaphoresandFiles()
+* Usage         : twoShellwithSemaphoresandFiles();
+* Definition    :
+*/
 void twoShellwithSemaphoresandFiles(){
-	server_or_client();
-	
+	serverOrClient();
+
 	FILE* file = NULL;
-	
+
 	sem_t *sem = sem_open(SNAME, O_CREAT , S_IRUSR | S_IWUSR , 0);
 	setValue(sem,0);
-	
+
 	if(operationMode){ // se for server
-		
+
 		pickMatrixSize();
-		system("clear");		
+		system("clear");
 		pickNumberBoats();
 		system("clear");
-		
+
 		file = fopen(FNAME,"w");
-		
+
 		fprintf(file,"%d \n",n_matrix);
 		for(int i=0; i<n_boats; i++){
 			fprintf(file,"%d ",boat_number[i]);
 		}
-		
+
 		fclose(file);
-		
+
 		sem_post(sem);
-		
+
 		//Board player1
 		printPlayer1();
 		Board* p1 = (Board *) buildBoard();
 		placeBoat(p1);
-		
+
 		gameS(p1, sem);
-		
+
 		destroyBoard(p1);
 	}
 	else { // se for o cliente
 		sem_wait(sem);
-		
+
 		system("clear");
 		file = fopen(FNAME,"r");
-		
+
 		fscanf(file,"%d",&n_matrix);
 		for(int i=0; i<n_boats; i++){
 			fscanf(file,"%d",&boat_number[i]);
 			sum_boats += boat_number[i];
 		}
-		
+
 		fclose(file);
-		
+
 		//Board player2
 		printPlayer2();
 		Board* p2 = (Board *) buildBoard();
 		placeBoat(p2);
-		
+
 		setValue(sem,10);
 		gameS(p2, sem);
-		
+
 		destroyBoard(p2);
 	}
-	
+
 	sem_close(sem);
 	sem_unlink(SNAME);
 }
-
+/**
+* Function name : gamingMode()
+* Usage         : gamingMode();
+* Definition    : This function shows a menu, which allows the user how they want to play.
+*/
 void gamingMode(){
 	int mode;
 	while (1) {
@@ -668,7 +731,7 @@ void gamingMode(){
 		if (mode >= 1 && mode <= 3) break;
 		printf("Invalid mode. Please try again.\n");
 	}
-	
+
 	switch(mode) {
 		case 1: defaultMode(); break;
 		case 2: twoShellwithSemaphoresandFiles(); break;
@@ -678,9 +741,9 @@ void gamingMode(){
 
 int main() {
 	srand(time(NULL)); // randomize seed
-	
+
 	system("clear");
 	Battleship();
-	
+
 	gamingMode();
 }

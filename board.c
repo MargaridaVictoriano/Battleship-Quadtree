@@ -9,7 +9,7 @@
 #include "utils.h"
 
 #ifdef QUAD
-#include "qtree.h" 
+#include "qtree.h"
 
 #endif
 
@@ -23,31 +23,31 @@
 Board *buildBoard() {
 	Board *new = (Board *)malloc(sizeof(Board)); //players map
 	if(new == NULL) exit(-1);
-	
+
 	#ifdef QUAD
 	new -> qtree = NULL;
-	
+
 	// calculo do numero de celulas necesarias para conter n_matrix*n_matrix
 	for(width = 1; width < n_matrix*n_matrix ; width <<= 2);
-	
+
 	// calculo da raiz quadrada do width
 	int solve = 1;
 	for( ; solve*solve < width; solve++);
 	width = solve;
-	
+
 	for(int i = 0; i < n_matrix; i++) {
 		for(int j = 0; j < n_matrix; j++) {
 			//printf("----------------------------------\n");
 			QD_Node* new_node = buildNode(QDLEAF);
 			new_node->node.leaf.p = makePoint(j,i);
 			new_node->node.leaf.cell = makeCell(0,0,NULL);
-			
+
 			//printf("endereço da raiz = %p\n",(void *)new -> qtree);
 			//printf("insert node cord(%d,%d)\n", new_node -> node.leaf.p.x, new_node -> node.leaf.p.y);
 			new -> qtree = insertNode(new -> qtree,new_node);
 		}
 	}
-	
+
 	#else
 	new -> map = (Cell *)malloc(n_matrix*n_matrix*sizeof(Cell));
 	if(new -> map == NULL) exit(-1);
@@ -57,7 +57,7 @@ Board *buildBoard() {
 			new -> map[i*n_matrix + j] = makeCell(0,0,NULL);
 		}
 	}
-	
+
 	#endif
 
 	new -> remainingBoats = 0;
@@ -77,12 +77,12 @@ Board *buildBoard() {
 void destroyBoard(Board* map) {
 	#ifdef QUAD
 	destroyQTree(map -> qtree);
-	
+
 	#else
 	free(map -> map);
-	
+
 	#endif
-	
+
 	for(int i=0; i < map -> size_boats; i++){
 		destroyBoat(map -> boats[i]);
 	}
@@ -99,7 +99,7 @@ void destroyBoard(Board* map) {
 
 bool containsBoat(Board* board, int x, int y) {
 	Cell* dest = getCell(board, x, y);
-	
+
 	if(dest -> ship != NULL) return true;
 	return false;
 }
@@ -299,6 +299,11 @@ void printAttackBoard(Board* board) {
 	}
 }
 
+/**
+* Function name : getCell()
+* Usage					: getCell(Board*, int, int)
+* Definition		: This function returns the corresponding cell.
+*/
 Cell* getCell(Board* board, int x, int y){
 	#ifdef QUAD
 	QD_Node* node = searchNode(board -> qtree, makePoint(x,y));

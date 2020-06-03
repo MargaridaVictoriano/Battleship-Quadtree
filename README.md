@@ -7,7 +7,7 @@ You can install both of them using the following terminal command:
 
 `sudo apt-get install build-essential`
 
-To compile the program you simply need to run the following terminal comand:
+To compile the program to use the matrix mode you simply need to run the following terminal comand:
 
  `make`
 
@@ -15,11 +15,23 @@ Then, to run the program you need to run the following terminal comand:
 
 `./battleship`.
 
+To compile the program to use the quadtree mode you simply need to run the following terminal comand:
+
+ `make quad`
+
+Then, to run the program you need to run the following terminal comand:
+
+`./battleship`.
+
+
+
 ## How to Play
 This is a two player game.
 You will be prompted with a menu with three options. If you press `1` you will start the game imediately, if you press  `2` the rules will be shown and if you press `3` you will quit the program.
 
 If it's your first time playing the game, we advise you to press `2` to read the rules since they explain in detail on how to play the game.
+
+After you press `1` to start the game, you will be prompted with another menu to choose how you want to play. In the default mode, both users play using the same shell. In the TwoShell, with semaphores and text files each user plays using its own shell.
 
 This version of the game is slightly different from the original Battleship since you can choose the board size and how many boats you want from each type. We also added a different type of boat. It is a L shapped boat and, just like in the others, you can choose how many types you want to play with. Please be aware that all the input is checked to assure it makes sense so you may have to respect some stated limits.
 

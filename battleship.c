@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <unistd.h>
 #include <time.h>
 
 #include <semaphore.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h>
 
 #include "global_var.h"
@@ -13,6 +15,11 @@
 #include "boat.h"
 #include "board.h"
 #include "utils.h"
+
+#define SNAME "/turn"
+#define FNAME "file"
+
+int advBoats;
 
 /**
 * Function name : showRules()
@@ -414,21 +421,17 @@ void pickPlayer(){
 	while (1) {
 		printf("\n");
 		printf("Select one of the following options.\n");
-		printf("0 :: Player1\n");
-		printf("1 :: Player2\n");
+		printf("1 :: Player1\n");
+		printf("2 :: Player2\n");
 		scanf("%d",&mode);
 		flushInput();
-		if (mode >= 0 && mode <= 1) break;
+		if (mode >= 1 && mode <= 2) break;
 		printf("Invalid mode. Please try again.\n");
 	}
-
-	operationMode = mode;
+	
+	if(mode == 1) operationMode = 1;
+	else operationMode = 0;
 }
-
-#define SNAME "/turn"
-#define FNAME "file"
-
-int advBoats;
 
 /**
 * Function name : setValue()
@@ -454,17 +457,6 @@ void setValue(sem_t* sem, int value){
 }
 
 /**
-* Function name : getValue()
-* Usage         : setValue(sem_t* sem);
-* Definition    : This function returns the semaphore value.
-*/
-int getValue(sem_t* sem){
-	int value;
-	sem_getvalue(sem,&value);
-	return value;
-}
-
-/**
 * Function name : waitValue()
 * Usage         : setValue(sem_t* sem, int value);
 * Definition    : Waits for the semaphore to get to a specific value.
@@ -478,7 +470,7 @@ void waitValue(sem_t* sem, int value){
 * Usage         : attackRemote(Board*, sem_t*);
 * Definition    : Receives the attack request, processes the information and answers whether it was hit or miss.
 */
-void attackRemote(Board* p, sem_t* sem){
+void attackRemoteS(Board* p, sem_t* sem){
 
 	if(!operationMode) waitValue(sem,4);
 	else waitValue(sem,6);
@@ -502,7 +494,7 @@ void attackRemote(Board* p, sem_t* sem){
 		setShip(ship, 2, x, y);
 		if(ship -> hp == 0) {
 			p -> remainingBoats--;
-			fprintf(file,"2");
+			fprintf(file,"2 %d", (int)ship -> id);
 		}
 		else fprintf(file,"1");
 	}
@@ -523,7 +515,7 @@ void attackRemote(Board* p, sem_t* sem){
 * Usage         : attackLocal(Board*,sem_t*);
 * Definition    : Prepares the attack, sents the request to the other player and acts accordingly.
 */
-bool attackLocal(Board* p,sem_t* sem){
+bool attackLocalS(Board* p,sem_t* sem){
 	int x, y;
 
 	scanf("%d", &x);
@@ -603,14 +595,13 @@ void gameS(Board* p, sem_t* sem){
 			while(!gameInterface(p));
 
 			printf("Player1 please select the attack coordinates.\n");
-			while(!attackLocal(p, sem));
+			while(!attackLocalS(p, sem));
 
 			if(advBoats == 0) break;
 
 			setValue(sem,5);
 
-			// ----- mode escuta ----
-			attackRemote(p, sem);
+			attackRemoteS(p, sem);
 
 		}
 	}
@@ -620,19 +611,18 @@ void gameS(Board* p, sem_t* sem){
 
 			setValue(sem, 2);
 			waitValue(sem,3);
-			// ----- mode escuta ----
-			attackRemote(p, sem);
+
+			attackRemoteS(p, sem);
 
 			if(p -> remainingBoats == 0) break;
 
-			// ----- mode attack ----
 			waitValue(sem,5);
 
 			printPlayer2();
 			while(!gameInterface(p));
 
 			printf("Player2 please select the attack coordinates.\n");
-			while(!attackLocal(p, sem));
+			while(!attackLocalS(p, sem));
 		}
 	}
 
@@ -698,7 +688,8 @@ void twoShellwithSemaphoresandFiles(){
 		printPlayer2();
 		Board* p2 = (Board *) buildBoard();
 		placeBoat(p2);
-
+		
+		system("clear");
 		setValue(sem,10);
 		gameS(p2, sem);
 
@@ -708,6 +699,7 @@ void twoShellwithSemaphoresandFiles(){
 	sem_close(sem);
 	sem_unlink(SNAME);
 }
+
 /**
 * Function name : gamingMode()
 * Usage         : gamingMode();
@@ -720,17 +712,15 @@ void gamingMode(){
 		printf("Select one of the following options.\n");
 		printf("1 :: Defaut Mode\n");
 		printf("2 :: TwoShell, with semaphores and text files\n");
-		printf("3 :: TwoShell, with pipes\n");
 		scanf("%d",&mode);
 		flushInput();
-		if (mode >= 1 && mode <= 3) break;
+		if (mode >= 1 && mode <= 2) break;
 		printf("Invalid mode. Please try again.\n");
 	}
 
 	switch(mode) {
 		case 1: defaultMode(); break;
 		case 2: twoShellwithSemaphoresandFiles(); break;
-		//case 3: twoShellwithPipes(); break;
 	}
 }
 
